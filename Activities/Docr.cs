@@ -1,5 +1,4 @@
 ﻿using Dbrain.UiPath.Docr.Activities.Properties;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Activities;
 using System.Collections.Generic;
@@ -42,7 +41,7 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedCategory(nameof(Resources.Output))]
         [LocalizedDisplayName(nameof(Resources.DocumentsName))]
         [LocalizedDescription(nameof(Resources.DocumentsDescription))]
-        public OutArgument<JArray> Documents { get; set; }
+        public OutArgument<String> Documents { get; set; }
 
         protected override void Execute(CodeActivityContext context)
         {
@@ -65,19 +64,15 @@ namespace Dbrain.UiPath.Docr.Activities
 
             HttpResponseMessage response = client.PostAsync(api_url, form).Result;
 
-            JObject obj;
             if (response.IsSuccessStatusCode)
             {
                 var json = response.Content.ReadAsStringAsync().Result;
-                obj = JObject.Parse(json);
-                Documents.Set(context, obj);
+                Documents.Set(context, json);
             }
             else
             {
-                obj = JObject.Parse("null");
+                Documents.Set(context, "");
             }
-
-            Documents.Set(context, obj);
 
             client.Dispose();
         }
