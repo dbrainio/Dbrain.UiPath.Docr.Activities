@@ -132,11 +132,11 @@
   <data name="ApiTokenName" xml:space="preserve">
     <value>API token</value>
   </data>
-  <data name="ApiUrlDescription" xml:space="preserve">
-    <value>URL for documents classification &amp; recognition</value>
+  <data name="ApiGatewayDescription" xml:space="preserve">
+    <value>Gateway for Docr server (do not specify if you want to use the cloud version)</value>
   </data>
-  <data name="ApiUrlName" xml:space="preserve">
-    <value>API URL</value>
+  <data name="ApiGatewayName" xml:space="preserve">
+    <value>API Gateway</value>
   </data>
   <data name="DocumentsDescription" xml:space="preserve">
     <value>List of recognized documents with classes</value>
@@ -161,5 +161,26 @@
   </data>
   <data name="DocrName" xml:space="preserve">
     <value>Dbrain OCR for documents</value>
+  </data>
+  <data name="ErrorDescription" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ErrorName" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="ActionDescription" xml:space="preserve">
+    <value>Action on a document</value>
+  </data>
+  <data name="ActionName" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Options" xml:space="preserve">
+    <value>Options</value>
+  </data>
+  <data name="JsonDescription" xml:space="preserve">
+    <value>Response in json</value>
+  </data>
+  <data name="JsonName" xml:space="preserve">
+    <value>JSON</value>
   </data>
 </root>
