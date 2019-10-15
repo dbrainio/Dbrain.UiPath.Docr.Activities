@@ -17,11 +17,44 @@ namespace Dbrain.UiPath.Docr.Activities
         ClassifyRecognizeHitl = 4,
     }
 
+    public struct ClassifyDocInfo
+    {
+        public string Type { get; set; }
+        public string Rotation { get; set; }
+    }
+    public struct ClassifyItem
+    {
+        public ClassifyDocInfo Document { get; set; }
+        public string Crop { get; set; }
+    }
+    public struct ClassifyResponse
+    {
+        public ClassifyItem[] Items;
+    }
+
+    public struct FieldInfo
+    {
+        public string Text { get; set; }
+        public float Confidence { get; set; }
+    }
+
+    public struct RecognizeItem
+    {
+        public Dictionary<string,FieldInfo> Fields { get; set; }
+        public string DocType { get; set; }
+    }
+    public struct RecognizeResponse
+    {
+        public RecognizeItem[] Items;
+    }
+
     [LocalizedCategory(nameof(Resources.DbrainOCR))]
     [LocalizedDisplayName(nameof(Resources.DocrName))]
     [LocalizedDescription(nameof(Resources.DocrDescription))]
     public class Docr : CodeActivity
     {
+        protected static string BaseCloudGateWay = "https://latest.dbrain.io";
+
         // Inputs
         [LocalizedCategory(nameof(Resources.Input))]
         [LocalizedDisplayName(nameof(Resources.ImageName))]
@@ -30,9 +63,9 @@ namespace Dbrain.UiPath.Docr.Activities
         public InArgument<FileStream> Image { get; set; }
 
         [LocalizedCategory(nameof(Resources.Input))]
-        [LocalizedDisplayName(nameof(Resources.AllowedClassesName))]
-        [LocalizedDescription(nameof(Resources.AllowedClassesDescription))]
-        public InArgument<List<String>> AllowedClasses { get; set; }
+        [LocalizedDisplayName(nameof(Resources.DocumentTypeName))]
+        [LocalizedDescription(nameof(Resources.DocumentTypeDescription))]
+        public InArgument<string> DocumentType { get; set; }
 
         // Outputs
         [LocalizedCategory(nameof(Resources.Output))]
@@ -55,44 +88,95 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedCategory(nameof(Resources.Options))]
         [LocalizedDisplayName(nameof(Resources.ApiGatewayName))]
         [LocalizedDescription(nameof(Resources.ApiGatewayDescription))]
-        public InArgument<String> ApiGateway { get; set; }
+        public InArgument<string> ApiGateway { get; set; }
 
         [LocalizedCategory(nameof(Resources.Options))]
         [LocalizedDisplayName(nameof(Resources.ApiTokenName))]
         [LocalizedDescription(nameof(Resources.ApiTokenDescription))]
         [RequiredArgument]
-        public InArgument<String> ApiToken { get; set; }
+        public InArgument<string> ApiToken { get; set; }
 
-        private string BuildURL(CodeActivityContext context)
+
+        private HttpClient BuildClient(string apiToken)
         {
-            string cloud_gateway = "https://recognition.latest.dbrain.io";
-            string method;
+            HttpClient client = new HttpClient();
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
+            client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", "Token " + apiToken);
+            return client;
+        }
+
+        private (bool Success, string Body) MakeRequest(HttpClient client, string url, FileStream image)
+        {
+            MultipartFormDataContent form = new MultipartFormDataContent
+            {
+                { new StreamContent(image), "image", image.Name }
+            };
+
+            HttpResponseMessage response = client.PostAsync(url, form).Result;
+            string json = response.Content.ReadAsStringAsync().Result;
+            return (response.IsSuccessStatusCode, json);
+        }
+
+        private (bool Success, byte[] Crop, string DocType, string Err) Classify(HttpClient client, string gateway, FileStream image)
+        {
+            string url = gateway + "/classify";
+            (bool Success, string Body) = MakeRequest(client, url, image);
+            if (Success)
+            {
+                ClassifyResponse body = JsonConvert.DeserializeObject<ClassifyResponse>(Body);
+
+                byte[] crop = null;// Convert.FromBase64String(body.Items[0].Crop);
+                string docType = body.Items[0].Document.Type;
+                return (true, crop, docType, Body);
+            }
+            return (false, null, "", Body);
+        }
+
+        private (bool Success, Dictionary<string, FieldInfo> Fields, string Err) Recognize(HttpClient client, string gateway, FileStream image, string docType, bool hitl = false)
+        {
+            string url = string.Format("{0}/{1}?doc_type={2}&with_hitl={3}", gateway, "recognize", docType, hitl);
+            (bool Success, string Body) = MakeRequest(client, url, image);
+            if (Success)
+            {
+                RecognizeResponse body = JsonConvert.DeserializeObject<RecognizeResponse>(Body);
+                var fields = body.Items[0].Fields;
+                return (true, fields, "");
+            }
+            return (false, null, Body);
+        }
+
+        protected override void Execute(CodeActivityContext context)
+        {
+            bool classify = false, recognize = false, hitl = false;
             switch (Action)
             {
                 case Actions.Classify:
                     {
-                        method = "predict";
-                        cloud_gateway = "https://classification.latest.dbrain.io";
+                        classify = true;
                         break;
                     }
                 case Actions.Recognize:
                     {
-                        method = "predict";
+                        recognize = true;
                         break;
                     }
                 case Actions.ClassifyRecognize:
                     {
-                        method = "predict/classify/recognize";
+                        classify = true;
+                        recognize = true;
                         break;
                     }
                 case Actions.ClassifyRecognizeHitl:
                     {
-                        method = "predict/classify/recognize/hitl";
+                        classify = true;
+                        recognize = true;
+                        hitl = true;
                         break;
                     }
                 default:
                     {
-                        method = "predict";
+                        classify = true;
+                        recognize = true;
                         break;
                     }
             }
@@ -100,46 +184,55 @@ namespace Dbrain.UiPath.Docr.Activities
             string gateway = ApiGateway.Get(context);
             if (gateway == null || !gateway.StartsWith("http"))
             {
-                gateway = cloud_gateway;
+                gateway = BaseCloudGateWay;
             }
 
-            return String.Format("{0}/{1}", gateway, method);            
-        }
-
-        protected override void Execute(CodeActivityContext context)
-        {
-            string url = BuildURL(context);
-            string api_token = ApiToken.Get(context);
-
+            string apiToken = ApiToken.Get(context);
             FileStream image = Image.Get(context);
+            string docType = DocumentType.Get(context);
 
-            List<string> allowed_classes = AllowedClasses.Get(context);
-            var ac = "";
-            if (allowed_classes != null)
+            HttpClient client = BuildClient(apiToken);
+
+            string result = "";
+            Dictionary<string, dynamic> error = null;
+
+            if (classify)
             {
-                ac = String.Join(",", allowed_classes.ToArray());
+                var classRes = Classify(client, gateway, image);
+                Json.Set(context, classRes.Err);
+                if (!classRes.Success)
+                {
+                    error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(classRes.Err);
+                    result = classRes.Err;
+                }
+                else
+                {
+                    // image = classRes.Crop;
+                    docType = classRes.DocType;
+                    result = docType;
+                }
             }
 
-            HttpClient client = new HttpClient();
-            client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
-            client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", "Token " + api_token);
-            MultipartFormDataContent form = new MultipartFormDataContent();
-
-            form.Add(new StreamContent(image), "image", image.Name);
-            form.Add(new StringContent(ac), "text");
-
-            HttpResponseMessage response = client.PostAsync(url, form).Result;
-            var json = response.Content.ReadAsStringAsync().Result;
-            Json.Set(context, json);
-
-            if (!response.IsSuccessStatusCode)
+            if (recognize)
             {
-                Error.Set(
-                    context,
-                    JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(json)
-                );
+                image.Seek(0, SeekOrigin.Begin);
+                var recRes = Recognize(client, gateway, image, docType, hitl);
+                if (!recRes.Success)
+                {
+                    error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(recRes.Err);
+                    result = recRes.Err;
+                }
+                else
+                {
+                    result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
+                    {
+                        ["document_type"] = docType,
+                        ["fields"] = recRes.Fields
+                    });
+                }
             }
-
+            Json.Set(context, result);
+            Error.Set(context, error);
             client.Dispose();
         }
     }
