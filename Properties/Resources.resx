@@ -183,4 +183,10 @@
   <data name="JsonName" xml:space="preserve">
     <value>JSON</value>
   </data>
+  <data name="HtmlDescription" xml:space="preserve">
+    <value>Html demo page</value>
+  </data>
+  <data name="HtmlName" xml:space="preserve">
+    <value>Html</value>
+  </data>
 </root>

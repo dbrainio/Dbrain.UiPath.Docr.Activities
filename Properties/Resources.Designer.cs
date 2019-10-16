@@ -196,6 +196,24 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Html demo page.
+        /// </summary>
+        public static string HtmlDescription {
+            get {
+                return ResourceManager.GetString("HtmlDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Html.
+        /// </summary>
+        public static string HtmlName {
+            get {
+                return ResourceManager.GetString("HtmlName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Input image with document for classification &amp; recognition.
         /// </summary>
         public static string ImageDescription {

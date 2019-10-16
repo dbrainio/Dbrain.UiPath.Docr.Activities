@@ -74,16 +74,21 @@ namespace Dbrain.UiPath.Docr.Activities
         public OutArgument<string> Json { get; set; }
 
         [LocalizedCategory(nameof(Resources.Output))]
+        [LocalizedDisplayName(nameof(Resources.HtmlName))]
+        [LocalizedDescription(nameof(Resources.HtmlDescription))]
+        public OutArgument<string> Html { get; set; }
+
+        [LocalizedCategory(nameof(Resources.Output))]
         [LocalizedDisplayName(nameof(Resources.ErrorName))]
         [LocalizedDescription(nameof(Resources.ErrorDescription))]
         public OutArgument<Dictionary<string, dynamic>> Error { get; set; }
 
         // Options
-        [LocalizedCategory(nameof(Resources.Options))]
-        [LocalizedDisplayName(nameof(Resources.ActionName))]
-        [LocalizedDescription(nameof(Resources.ActionDescription))]
-        [RequiredArgument]
-        public Actions Action { get; set; }
+        //[LocalizedCategory(nameof(Resources.Options))]
+        //[LocalizedDisplayName(nameof(Resources.ActionName))]
+        //[LocalizedDescription(nameof(Resources.ActionDescription))]
+        //[RequiredArgument]
+        //public Actions Action { get; set; }
 
         [LocalizedCategory(nameof(Resources.Options))]
         [LocalizedDisplayName(nameof(Resources.ApiGatewayName))]
@@ -107,6 +112,7 @@ namespace Dbrain.UiPath.Docr.Activities
 
         private (bool Success, string Body) MakeRequest(HttpClient client, string url, FileStream image)
         {
+            _ = image.Seek(0, SeekOrigin.Begin);
             MultipartFormDataContent form = new MultipartFormDataContent
             {
                 { new StreamContent(image), "image", image.Name }
@@ -117,7 +123,7 @@ namespace Dbrain.UiPath.Docr.Activities
             return (response.IsSuccessStatusCode, json);
         }
 
-        private (bool Success, byte[] Crop, string DocType, string Err) Classify(HttpClient client, string gateway, FileStream image)
+        private (bool Success, string Crop, string DocType, string Err) Classify(HttpClient client, string gateway, FileStream image)
         {
             string url = gateway + "/classify";
             (bool Success, string Body) = MakeRequest(client, url, image);
@@ -125,9 +131,9 @@ namespace Dbrain.UiPath.Docr.Activities
             {
                 ClassifyResponse body = JsonConvert.DeserializeObject<ClassifyResponse>(Body);
 
-                byte[] crop = null;// Convert.FromBase64String(body.Items[0].Crop);
+               // byte[] crop = null; Convert.FromBase64String(body.Items[0].Crop);
                 string docType = body.Items[0].Document.Type;
-                return (true, crop, docType, Body);
+                return (true, body.Items[0].Crop, docType, Body);
             }
             return (false, null, "", Body);
         }
@@ -144,42 +150,73 @@ namespace Dbrain.UiPath.Docr.Activities
             }
             return (false, null, Body);
         }
+        private string BuildHTML(string crop, string docType, Dictionary<string, FieldInfo> fields)
+        {
+            string htmlBase = @"<!DOCTYPE html>
+                                <html lang=""en"">
+                                <head>
+                                    <meta charset=""utf-8""/>
+                                    <title></title>
+                                </head>
+                                <body style=""width:800px;"">
+                                    <table style=""width:800px; height: 100%;""><tr>
+                                    <td style=""width:400px;""><img src=""{0}"" style=""width:400px""/></td>
+                                    <td style=""width:400px""><table>
+                                        <th>Field</th>
+                                        <th>Value</th>
+                                        {1}
+                                    </table></td>
+                                    </tr></table>
+                                </body>
+                                </html>";
+            string docTypeRow = string.Format("<tr><td>{0}</td><td>{1}</td></tr>", "Document Type", docType);
+            foreach (KeyValuePair<string, FieldInfo> entry in fields)
+            {
+                if (entry.Key.StartsWith("mrz"))
+                {
+                    continue;
+                }
+                docTypeRow += string.Format("<tr><td>{0}</td><td>{1}</td></tr>", entry.Key, entry.Value.Text);
+            }
+
+            return string.Format(htmlBase, crop, docTypeRow);
+        }
 
         protected override void Execute(CodeActivityContext context)
         {
-            bool classify = false, recognize = false, hitl = false;
-            switch (Action)
-            {
-                case Actions.Classify:
-                    {
-                        classify = true;
-                        break;
-                    }
-                case Actions.Recognize:
-                    {
-                        recognize = true;
-                        break;
-                    }
-                case Actions.ClassifyRecognize:
-                    {
-                        classify = true;
-                        recognize = true;
-                        break;
-                    }
-                case Actions.ClassifyRecognizeHitl:
-                    {
-                        classify = true;
-                        recognize = true;
-                        hitl = true;
-                        break;
-                    }
-                default:
-                    {
-                        classify = true;
-                        recognize = true;
-                        break;
-                    }
-            }
+            //bool classify = false, recognize = false, hitl = false;
+            //switch (Action)
+            //{
+            //    case Actions.Classify:
+            //        {
+            //            classify = true;
+            //            break;
+            //        }
+            //    case Actions.Recognize:
+            //        {
+            //            recognize = true;
+            //            break;
+            //        }
+            //    case Actions.ClassifyRecognize:
+            //        {
+            //            classify = true;
+            //            recognize = true;
+            //            break;
+            //        }
+            //    case Actions.ClassifyRecognizeHitl:
+            //        {
+            //            classify = true;
+            //            recognize = true;
+            //            hitl = true;
+            //            break;
+            //        }
+            //    default:
+            //        {
+            //            classify = true;
+            //            recognize = true;
+            //            break;
+            //        }
+            //}
 
             string gateway = ApiGateway.Get(context);
             if (gateway == null || !gateway.StartsWith("http"))
@@ -196,41 +233,38 @@ namespace Dbrain.UiPath.Docr.Activities
             string result = "";
             Dictionary<string, dynamic> error = null;
 
-            if (classify)
+            var classRes = Classify(client, gateway, image);
+            Json.Set(context, classRes.Err);
+            if (!classRes.Success)
             {
-                var classRes = Classify(client, gateway, image);
-                Json.Set(context, classRes.Err);
-                if (!classRes.Success)
-                {
-                    error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(classRes.Err);
-                    result = classRes.Err;
-                }
-                else
-                {
-                    // image = classRes.Crop;
-                    docType = classRes.DocType;
-                    result = docType;
-                }
+                error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(classRes.Err);
+                result = classRes.Err;
+                Json.Set(context, result);
+                Error.Set(context, error);
+                client.Dispose();
+                return;
             }
+            string crop = classRes.Crop;
+            docType = classRes.DocType;
+            result = docType;
 
-            if (recognize)
+            var recRes = Recognize(client, gateway, image, docType, false);
+            if (!recRes.Success)
             {
-                image.Seek(0, SeekOrigin.Begin);
-                var recRes = Recognize(client, gateway, image, docType, hitl);
-                if (!recRes.Success)
-                {
-                    error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(recRes.Err);
-                    result = recRes.Err;
-                }
-                else
-                {
-                    result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
-                    {
-                        ["document_type"] = docType,
-                        ["fields"] = recRes.Fields
-                    });
-                }
+                error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(recRes.Err);
+                result = recRes.Err;
+                Json.Set(context, result);
+                Error.Set(context, error);
+                client.Dispose();
+                return;
             }
+            result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
+            {
+                ["document_type"] = docType,
+                ["fields"] = recRes.Fields
+            });
+
+            Html.Set(context, BuildHTML(crop, docType, recRes.Fields));
             Json.Set(context, result);
             Error.Set(context, error);
             client.Dispose();

@@ -150,6 +150,12 @@
   <data name="DocumentTypeName" xml:space="preserve">
     <value>Document type</value>
   </data>
+  <data name="HtmlDescription" xml:space="preserve">
+    <value>Html demo page</value>
+  </data>
+  <data name="HtmlName" xml:space="preserve">
+    <value>Html</value>
+  </data>
   <data name="ImageDescription" xml:space="preserve">
     <value>Input image with document for classification &amp; recognition</value>
   </data>
