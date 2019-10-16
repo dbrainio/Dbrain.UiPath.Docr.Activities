@@ -26,8 +26,8 @@
             <TextBlock Grid.Row="0" Grid.Column="0" Text="{x:Static resource:Resources.ImageName}" Margin="10,0,0,0"/>
             <sapv:ExpressionTextBox Grid.Row="0" Grid.Column="1"  OwnerActivity="{Binding Path=ModelItem}" ExpressionType="{x:Type s:String}" HintText="{x:Static resource:Resources.ImageDescription}" Expression="{Binding Path=ModelItem.Image, Converter={StaticResource ArgumentToExpressionConverter},ConverterParameter=In, Mode=TwoWay}" Margin="2,0,0,0"/>
 
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resource:Resources.AllowedClassesName}" Margin="10,0,0,0"/>
-            <sapv:ExpressionTextBox Grid.Row="1" Grid.Column="1"  OwnerActivity="{Binding Path=ModelItem}" ExpressionType="{x:Type s:String}" HintText="{x:Static resource:Resources.AllowedClassesDescription}" Expression="{Binding Path=ModelItem.AllowedClasses, Converter={StaticResource ArgumentToExpressionConverter},ConverterParameter=In, Mode=TwoWay}" Margin="2,0,0,0"/>
+            <TextBlock Grid.Row="1" Grid.Column="0" Text="{x:Static resource:Resources.DocumentTypeName}" Margin="10,0,0,0"/>
+            <sapv:ExpressionTextBox Grid.Row="1" Grid.Column="1"  OwnerActivity="{Binding Path=ModelItem}" ExpressionType="{x:Type s:String}" HintText="{x:Static resource:Resources.DocumentTypeDescription}" Expression="{Binding Path=ModelItem.AllowedClasses, Converter={StaticResource ArgumentToExpressionConverter},ConverterParameter=In, Mode=TwoWay}" Margin="2,0,0,0"/>
         </Grid>
     </DockPanel>
     <sap:ActivityDesigner.Icon>

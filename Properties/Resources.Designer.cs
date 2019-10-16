@@ -79,24 +79,6 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to List of document classes allowed for recognition.
-        /// </summary>
-        public static string AllowedClassesDescription {
-            get {
-                return ResourceManager.GetString("AllowedClassesDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Allowed classes.
-        /// </summary>
-        public static string AllowedClassesName {
-            get {
-                return ResourceManager.GetString("AllowedClassesName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Gateway for Docr server (do not specify if you want to use the cloud version).
         /// </summary>
         public static string ApiGatewayDescription {
@@ -174,6 +156,24 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         public static string DocumentsName {
             get {
                 return ResourceManager.GetString("DocumentsName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Name of document type to be recognized.
+        /// </summary>
+        public static string DocumentTypeDescription {
+            get {
+                return ResourceManager.GetString("DocumentTypeDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Document type.
+        /// </summary>
+        public static string DocumentTypeName {
+            get {
+                return ResourceManager.GetString("DocumentTypeName", resourceCulture);
             }
         }
         

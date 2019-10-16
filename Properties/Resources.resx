@@ -120,11 +120,11 @@
   <data name="DbrainOCR" xml:space="preserve">
     <value>Dbrain OCR</value>
   </data>
-  <data name="AllowedClassesDescription" xml:space="preserve">
-    <value>List of document classes allowed for recognition</value>
+  <data name="DocumentTypeDescription" xml:space="preserve">
+    <value>Name of document type to be recognized</value>
   </data>
-  <data name="AllowedClassesName" xml:space="preserve">
-    <value>Allowed classes</value>
+  <data name="DocumentTypeName" xml:space="preserve">
+    <value>Document type</value>
   </data>
   <data name="ApiTokenDescription" xml:space="preserve">
     <value>Access token for API</value>
