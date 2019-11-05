@@ -60,12 +60,7 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedDisplayName(nameof(Resources.ImageName))]
         [LocalizedDescription(nameof(Resources.ImageDescription))]
         [RequiredArgument]
-        public InArgument<FileStream> Image { get; set; }
-
-        [LocalizedCategory(nameof(Resources.Input))]
-        [LocalizedDisplayName(nameof(Resources.DocumentTypeName))]
-        [LocalizedDescription(nameof(Resources.DocumentTypeDescription))]
-        public InArgument<string> DocumentType { get; set; }
+        public InArgument<String> ImagePath { get; set; }
 
         // Outputs
         [LocalizedCategory(nameof(Resources.Output))]
@@ -81,14 +76,7 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedCategory(nameof(Resources.Output))]
         [LocalizedDisplayName(nameof(Resources.ErrorName))]
         [LocalizedDescription(nameof(Resources.ErrorDescription))]
-        public OutArgument<Dictionary<string, dynamic>> Error { get; set; }
-
-        // Options
-        //[LocalizedCategory(nameof(Resources.Options))]
-        //[LocalizedDisplayName(nameof(Resources.ActionName))]
-        //[LocalizedDescription(nameof(Resources.ActionDescription))]
-        //[RequiredArgument]
-        //public Actions Action { get; set; }
+        public OutArgument<String> Error { get; set; }
 
         [LocalizedCategory(nameof(Resources.Options))]
         [LocalizedDisplayName(nameof(Resources.ApiGatewayName))]
@@ -184,40 +172,6 @@ namespace Dbrain.UiPath.Docr.Activities
 
         protected override void Execute(CodeActivityContext context)
         {
-            //bool classify = false, recognize = false, hitl = false;
-            //switch (Action)
-            //{
-            //    case Actions.Classify:
-            //        {
-            //            classify = true;
-            //            break;
-            //        }
-            //    case Actions.Recognize:
-            //        {
-            //            recognize = true;
-            //            break;
-            //        }
-            //    case Actions.ClassifyRecognize:
-            //        {
-            //            classify = true;
-            //            recognize = true;
-            //            break;
-            //        }
-            //    case Actions.ClassifyRecognizeHitl:
-            //        {
-            //            classify = true;
-            //            recognize = true;
-            //            hitl = true;
-            //            break;
-            //        }
-            //    default:
-            //        {
-            //            classify = true;
-            //            recognize = true;
-            //            break;
-            //        }
-            //}
-
             string gateway = ApiGateway.Get(context);
             if (gateway == null || !gateway.StartsWith("http"))
             {
@@ -225,19 +179,18 @@ namespace Dbrain.UiPath.Docr.Activities
             }
 
             string apiToken = ApiToken.Get(context);
-            FileStream image = Image.Get(context);
-            string docType = DocumentType.Get(context);
+            FileStream image = File.Open(ImagePath.Get(context), FileMode.Open);
 
             HttpClient client = BuildClient(apiToken);
 
             string result = "";
-            Dictionary<string, dynamic> error = null;
+            string error = null;
 
             var classRes = Classify(client, gateway, image);
             Json.Set(context, classRes.Err);
             if (!classRes.Success)
             {
-                error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(classRes.Err);
+                error = classRes.Err;
                 result = classRes.Err;
                 Json.Set(context, result);
                 Error.Set(context, error);
@@ -245,13 +198,13 @@ namespace Dbrain.UiPath.Docr.Activities
                 return;
             }
             string crop = classRes.Crop;
-            docType = classRes.DocType;
+            string docType = classRes.DocType;
             result = docType;
 
             var recRes = Recognize(client, gateway, image, docType, false);
             if (!recRes.Success)
             {
-                error = JsonConvert.DeserializeObject<Dictionary<string, dynamic>>(recRes.Err);
+                error = recRes.Err;
                 result = recRes.Err;
                 Json.Set(context, result);
                 Error.Set(context, error);

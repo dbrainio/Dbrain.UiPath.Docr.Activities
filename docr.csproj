@@ -103,7 +103,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_BuildVersioningStyle="YearStamp.MonthStamp.Increment.TimeStamp" BuildVersion_UseGlobalSettings="True" BuildVersion_UpdateFileVersion="True" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_StartDate="2000/1/1" />
+      <UserProperties BuildVersion_StartDate="2000/1/1" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" BuildVersion_UseGlobalSettings="True" BuildVersion_BuildVersioningStyle="YearStamp.MonthStamp.Increment.TimeStamp" />
     </VisualStudio>
   </ProjectExtensions>
   <Target Name="PostBuildMacros">
@@ -121,6 +121,7 @@
   </PostBuildEventDependsOn>
     <PostBuildEvent>IF EXIST "$(ProjectDir)$(OutDir)*.nupkg" del "$(ProjectDir)$(OutDir)*.nupkg"
 C:\nuget.exe pack "$(ProjectPath)"
-IF EXIST "$(ProjectDir)$(OutDir)*.nupkg" xcopy /Y "$(ProjectDir)$(OutDir)*.nupkg" "C:\Users\DGerasimov\AppData\Local\UiPath\app-19.9.2\Packages"</PostBuildEvent>
+IF EXIST "$(ProjectDir)$(OutDir)*.nupkg" xcopy /Y "$(ProjectDir)$(OutDir)*.nupkg" "C:\Users\DGerasimov\AppData\Local\UiPath\app-19.9.2\Packages\"
+</PostBuildEvent>
   </PropertyGroup>
 </Project>
