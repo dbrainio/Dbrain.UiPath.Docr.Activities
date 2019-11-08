@@ -120,12 +120,6 @@
   <data name="DbrainOCR" xml:space="preserve">
     <value>Dbrain OCR</value>
   </data>
-  <data name="DocumentTypeDescription" xml:space="preserve">
-    <value>Name of document type to be recognized</value>
-  </data>
-  <data name="DocumentTypeName" xml:space="preserve">
-    <value>Document type</value>
-  </data>
   <data name="ApiTokenDescription" xml:space="preserve">
     <value>Access token for API</value>
   </data>
@@ -138,11 +132,11 @@
   <data name="ApiGatewayName" xml:space="preserve">
     <value>API Gateway</value>
   </data>
-  <data name="DocumentsDescription" xml:space="preserve">
-    <value>List of recognized documents with classes</value>
+  <data name="AllowedDocsName" xml:space="preserve">
+    <value>Allowed Documents</value>
   </data>
-  <data name="DocumentsName" xml:space="preserve">
-    <value>Documents</value>
+  <data name="AllowedDocsDescription" xml:space="preserve">
+    <value>Allowed Documents separated by commas, e.g. "passport_main,bank_card". More at https://latest.dbrain.io/try#/Documents/recognize_recognize_post</value>
   </data>
   <data name="ImageDescription" xml:space="preserve">
     <value>Input image with document for classification &amp; recognition</value>
@@ -177,16 +171,19 @@
   <data name="Options" xml:space="preserve">
     <value>Options</value>
   </data>
-  <data name="JsonDescription" xml:space="preserve">
-    <value>Response in json</value>
+  <data name="Result" xml:space="preserve">
+    <value>Result in json</value>
   </data>
-  <data name="JsonName" xml:space="preserve">
-    <value>JSON</value>
+  <data name="ResultName" xml:space="preserve">
+    <value>Result</value>
   </data>
   <data name="HtmlDescription" xml:space="preserve">
     <value>Html demo page</value>
   </data>
   <data name="HtmlName" xml:space="preserve">
     <value>Html</value>
+  </data>
+  <data name="ResultDescription" xml:space="preserve">
+    <value>Result message in JSON format</value>
   </data>
 </root>

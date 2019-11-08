@@ -79,6 +79,24 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Allowed Documents separated by commas, e.g. &quot;passport_main,bank_card&quot;. More at https://latest.dbrain.io/try#/Documents/recognize_recognize_post.
+        /// </summary>
+        public static string AllowedDocsDescription {
+            get {
+                return ResourceManager.GetString("AllowedDocsDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Allowed Documents.
+        /// </summary>
+        public static string AllowedDocsName {
+            get {
+                return ResourceManager.GetString("AllowedDocsName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Gateway for Docr server (do not specify if you want to use the cloud version).
         /// </summary>
         public static string ApiGatewayDescription {
@@ -138,42 +156,6 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         public static string DocrName {
             get {
                 return ResourceManager.GetString("DocrName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to List of recognized documents with classes.
-        /// </summary>
-        public static string DocumentsDescription {
-            get {
-                return ResourceManager.GetString("DocumentsDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Documents.
-        /// </summary>
-        public static string DocumentsName {
-            get {
-                return ResourceManager.GetString("DocumentsName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Name of document type to be recognized.
-        /// </summary>
-        public static string DocumentTypeDescription {
-            get {
-                return ResourceManager.GetString("DocumentTypeDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to Document type.
-        /// </summary>
-        public static string DocumentTypeName {
-            get {
-                return ResourceManager.GetString("DocumentTypeName", resourceCulture);
             }
         }
         
@@ -241,24 +223,6 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Response in json.
-        /// </summary>
-        public static string JsonDescription {
-            get {
-                return ResourceManager.GetString("JsonDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Looks up a localized string similar to JSON.
-        /// </summary>
-        public static string JsonName {
-            get {
-                return ResourceManager.GetString("JsonName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Looks up a localized string similar to Options.
         /// </summary>
         public static string Options {
@@ -273,6 +237,33 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         public static string Output {
             get {
                 return ResourceManager.GetString("Output", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Result in json.
+        /// </summary>
+        public static string Result {
+            get {
+                return ResourceManager.GetString("Result", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Result message in JSON format.
+        /// </summary>
+        public static string ResultDescription {
+            get {
+                return ResourceManager.GetString("ResultDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Result.
+        /// </summary>
+        public static string ResultName {
+            get {
+                return ResourceManager.GetString("ResultName", resourceCulture);
             }
         }
     }

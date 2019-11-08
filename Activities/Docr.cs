@@ -2,21 +2,13 @@
 using System;
 using System.Activities;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
+using System.Drawing;
 using System.Net.Http;
 using Newtonsoft.Json;
 
 namespace Dbrain.UiPath.Docr.Activities
 {
-    public enum Actions
-    {
-        Classify = 1,
-        Recognize = 2,
-        ClassifyRecognize = 3,
-        ClassifyRecognizeHitl = 4,
-    }
-
     public struct ClassifyDocInfo
     {
         public string Type { get; set; }
@@ -48,6 +40,12 @@ namespace Dbrain.UiPath.Docr.Activities
         public RecognizeItem[] Items;
     }
 
+    public struct ErrorResponse
+    {
+        public int Code;
+        public string Message;
+    }
+
     [LocalizedCategory(nameof(Resources.DbrainOCR))]
     [LocalizedDisplayName(nameof(Resources.DocrName))]
     [LocalizedDescription(nameof(Resources.DocrDescription))]
@@ -60,13 +58,19 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedDisplayName(nameof(Resources.ImageName))]
         [LocalizedDescription(nameof(Resources.ImageDescription))]
         [RequiredArgument]
-        public InArgument<String> ImagePath { get; set; }
+        public InArgument<Image> ImagePayload { get; set; }
+
+        [LocalizedCategory(nameof(Resources.Input))]
+        [LocalizedDisplayName(nameof(Resources.AllowedDocsName))]
+        [LocalizedDescription(nameof(Resources.AllowedDocsDescription))]
+        [RequiredArgument]
+        public InArgument<string> AllowedDocs { get; set; }
 
         // Outputs
         [LocalizedCategory(nameof(Resources.Output))]
-        [LocalizedDisplayName(nameof(Resources.JsonName))]
-        [LocalizedDescription(nameof(Resources.JsonDescription))]
-        public OutArgument<string> Json { get; set; }
+        [LocalizedDisplayName(nameof(Resources.ResultName))]
+        [LocalizedDescription(nameof(Resources.ResultDescription))]
+        public OutArgument<string> Result { get; set; }
 
         [LocalizedCategory(nameof(Resources.Output))]
         [LocalizedDisplayName(nameof(Resources.HtmlName))]
@@ -76,7 +80,7 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedCategory(nameof(Resources.Output))]
         [LocalizedDisplayName(nameof(Resources.ErrorName))]
         [LocalizedDescription(nameof(Resources.ErrorDescription))]
-        public OutArgument<String> Error { get; set; }
+        public OutArgument<int> Error { get; set; }
 
         [LocalizedCategory(nameof(Resources.Options))]
         [LocalizedDisplayName(nameof(Resources.ApiGatewayName))]
@@ -89,7 +93,6 @@ namespace Dbrain.UiPath.Docr.Activities
         [RequiredArgument]
         public InArgument<string> ApiToken { get; set; }
 
-
         private HttpClient BuildClient(string apiToken)
         {
             HttpClient client = new HttpClient();
@@ -98,45 +101,75 @@ namespace Dbrain.UiPath.Docr.Activities
             return client;
         }
 
-        private (bool Success, string Body) MakeRequest(HttpClient client, string url, FileStream image)
+        private MemoryStream ImageToStream(Image image)
         {
-            _ = image.Seek(0, SeekOrigin.Begin);
+            MemoryStream ms = new MemoryStream();
+            image.Save(ms, image.RawFormat);
+            _ = ms.Seek(0, SeekOrigin.Begin);
+            return ms;
+        }
+
+        private Image ImageFromBase64(string base64String)
+        {
+            byte[] imageBytes = Convert.FromBase64String(base64String.Substring(base64String.LastIndexOf(',') + 1));
+            MemoryStream ms = new MemoryStream(imageBytes, 0, imageBytes.Length);
+            Image image = Image.FromStream(ms, true);
+            return image;
+        }
+
+
+        private (bool Success, string Body) MakeRequest(HttpClient client, string url, Image image)
+        {
             MultipartFormDataContent form = new MultipartFormDataContent
             {
-                { new StreamContent(image), "image", image.Name }
+                { new StreamContent(ImageToStream(image)), "image", "doc.jpeg" }
             };
 
             HttpResponseMessage response = client.PostAsync(url, form).Result;
             string json = response.Content.ReadAsStringAsync().Result;
             return (response.IsSuccessStatusCode, json);
         }
-
-        private (bool Success, string Crop, string DocType, string Err) Classify(HttpClient client, string gateway, FileStream image)
+        private (bool Success, string Crop, string DocType, int Err) Classify(HttpClient client, string gateway, Image image)
         {
             string url = gateway + "/classify";
+
+            string crop = null;
+            string docType = null;
+            int err = 0;
+
             (bool Success, string Body) = MakeRequest(client, url, image);
             if (Success)
             {
                 ClassifyResponse body = JsonConvert.DeserializeObject<ClassifyResponse>(Body);
-
-               // byte[] crop = null; Convert.FromBase64String(body.Items[0].Crop);
-                string docType = body.Items[0].Document.Type;
-                return (true, body.Items[0].Crop, docType, Body);
+                crop = body.Items[0].Crop;
+                docType = body.Items[0].Document.Type;
             }
-            return (false, null, "", Body);
+            else
+            {
+                ErrorResponse body = JsonConvert.DeserializeObject<ErrorResponse>(Body);
+                err = body.Code;
+            }
+            return (Success, crop, docType, err);
         }
 
-        private (bool Success, Dictionary<string, FieldInfo> Fields, string Err) Recognize(HttpClient client, string gateway, FileStream image, string docType, bool hitl = false)
+        private (bool Success, Dictionary<string, FieldInfo> Fields, int Err) Recognize(HttpClient client, string gateway, Image image, string docType, bool hitl = false)
         {
             string url = string.Format("{0}/{1}?doc_type={2}&with_hitl={3}", gateway, "recognize", docType, hitl);
+            int err = 0;
+            Dictionary<string, FieldInfo> fields = null;
+
             (bool Success, string Body) = MakeRequest(client, url, image);
             if (Success)
             {
                 RecognizeResponse body = JsonConvert.DeserializeObject<RecognizeResponse>(Body);
-                var fields = body.Items[0].Fields;
-                return (true, fields, "");
+                fields = body.Items[0].Fields;
             }
-            return (false, null, Body);
+            else
+            {
+                ErrorResponse body = JsonConvert.DeserializeObject<ErrorResponse>(Body);
+                err = body.Code;
+            }
+            return (Success, fields, err);
         }
         private string BuildHTML(string crop, string docType, Dictionary<string, FieldInfo> fields)
         {
@@ -173,53 +206,69 @@ namespace Dbrain.UiPath.Docr.Activities
         protected override void Execute(CodeActivityContext context)
         {
             string gateway = ApiGateway.Get(context);
+            string apiToken = ApiToken.Get(context);
+            string allowedDocs = AllowedDocs.Get(context);
+            Image image = ImagePayload.Get(context);
+
             if (gateway == null || !gateway.StartsWith("http"))
             {
                 gateway = BaseCloudGateWay;
             }
 
-            string apiToken = ApiToken.Get(context);
-            FileStream image = File.Open(ImagePath.Get(context), FileMode.Open);
-
             HttpClient client = BuildClient(apiToken);
+            string html = null;
+            int err = 0;
 
-            string result = "";
-            string error = null;
+            var ClassifyResult = Classify(client, gateway, image);
 
-            var classRes = Classify(client, gateway, image);
-            Json.Set(context, classRes.Err);
-            if (!classRes.Success)
+            string result;
+            if (!ClassifyResult.Success)
             {
-                error = classRes.Err;
-                result = classRes.Err;
-                Json.Set(context, result);
-                Error.Set(context, error);
-                client.Dispose();
-                return;
+                err = ClassifyResult.Err;
+                result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
+                {
+                    ["message"] = "Classification error"
+                });
             }
-            string crop = classRes.Crop;
-            string docType = classRes.DocType;
-            result = docType;
-
-            var recRes = Recognize(client, gateway, image, docType, false);
-            if (!recRes.Success)
+            else
             {
-                error = recRes.Err;
-                result = recRes.Err;
-                Json.Set(context, result);
-                Error.Set(context, error);
-                client.Dispose();
-                return;
+                if (allowedDocs.Contains(ClassifyResult.DocType))
+                {
+                    image = ImageFromBase64(ClassifyResult.Crop);
+                    var RecognizeResult = Recognize(client, gateway, image, ClassifyResult.DocType, false);
+                    if (!RecognizeResult.Success)
+                    {
+                        err = RecognizeResult.Err;
+                        result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
+                        {
+                            ["message"] = "Recognition error"
+                        });
+
+                    }
+                    else
+                    {
+                        result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
+                        {
+                            ["document_type"] = ClassifyResult.DocType,
+                            ["fields"] = RecognizeResult.Fields
+                        });
+                        html = BuildHTML(ClassifyResult.Crop, ClassifyResult.DocType, RecognizeResult.Fields);
+                    }
+                }
+                else
+                {
+                    err = 500;
+                    result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
+                    {
+                        ["message"] = string.Format("Document type '{0}' not allowed", ClassifyResult.DocType),
+                        ["allowed_docs"] = allowedDocs
+                    });
+                }
             }
-            result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
-            {
-                ["document_type"] = docType,
-                ["fields"] = recRes.Fields
-            });
 
-            Html.Set(context, BuildHTML(crop, docType, recRes.Fields));
-            Json.Set(context, result);
-            Error.Set(context, error);
+            Result.Set(context, result);
+            Html.Set(context, html);
+            Error.Set(context, err);
             client.Dispose();
         }
     }
