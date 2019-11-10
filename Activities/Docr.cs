@@ -63,7 +63,6 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedCategory(nameof(Resources.Input))]
         [LocalizedDisplayName(nameof(Resources.AllowedDocsName))]
         [LocalizedDescription(nameof(Resources.AllowedDocsDescription))]
-        [RequiredArgument]
         public InArgument<string> AllowedDocs { get; set; }
 
         // Outputs
@@ -129,13 +128,14 @@ namespace Dbrain.UiPath.Docr.Activities
             string json = response.Content.ReadAsStringAsync().Result;
             return (response.IsSuccessStatusCode, json);
         }
-        private (bool Success, string Crop, string DocType, int Err) Classify(HttpClient client, string gateway, Image image)
+        private (bool Success, string Crop, string DocType, int Err, string Message) Classify(HttpClient client, string gateway, Image image)
         {
             string url = gateway + "/classify";
 
             string crop = null;
             string docType = null;
             int err = 0;
+            string message = null;
 
             (bool Success, string Body) = MakeRequest(client, url, image);
             if (Success)
@@ -148,14 +148,16 @@ namespace Dbrain.UiPath.Docr.Activities
             {
                 ErrorResponse body = JsonConvert.DeserializeObject<ErrorResponse>(Body);
                 err = body.Code;
+                message = body.Message;
             }
-            return (Success, crop, docType, err);
+            return (Success, crop, docType, err, message);
         }
 
-        private (bool Success, Dictionary<string, FieldInfo> Fields, int Err) Recognize(HttpClient client, string gateway, Image image, string docType, bool hitl = false)
+        private (bool Success, Dictionary<string, FieldInfo> Fields, int Err, string Message) Recognize(HttpClient client, string gateway, Image image, string docType, bool hitl = false)
         {
             string url = string.Format("{0}/{1}?doc_type={2}&with_hitl={3}", gateway, "recognize", docType, hitl);
             int err = 0;
+            string message = null;
             Dictionary<string, FieldInfo> fields = null;
 
             (bool Success, string Body) = MakeRequest(client, url, image);
@@ -168,8 +170,9 @@ namespace Dbrain.UiPath.Docr.Activities
             {
                 ErrorResponse body = JsonConvert.DeserializeObject<ErrorResponse>(Body);
                 err = body.Code;
+                message = body.Message;
             }
-            return (Success, fields, err);
+            return (Success, fields, err, message);
         }
         private string BuildHTML(string crop, string docType, Dictionary<string, FieldInfo> fields)
         {
@@ -227,12 +230,13 @@ namespace Dbrain.UiPath.Docr.Activities
                 err = ClassifyResult.Err;
                 result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
                 {
-                    ["message"] = "Classification error"
+                    ["message"] = ClassifyResult.Message,
+                    ["error"] = err
                 });
             }
             else
             {
-                if (allowedDocs.Contains(ClassifyResult.DocType))
+                if (allowedDocs == null || allowedDocs.Contains(ClassifyResult.DocType))
                 {
                     image = ImageFromBase64(ClassifyResult.Crop);
                     var RecognizeResult = Recognize(client, gateway, image, ClassifyResult.DocType, false);
@@ -241,9 +245,10 @@ namespace Dbrain.UiPath.Docr.Activities
                         err = RecognizeResult.Err;
                         result = JsonConvert.SerializeObject(new Dictionary<string, dynamic>()
                         {
-                            ["message"] = "Recognition error"
+                            ["message"] = RecognizeResult.Message,
+                            ["error"] = err,
+                            ["document_type"] = ClassifyResult.DocType
                         });
-
                     }
                     else
                     {

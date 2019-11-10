@@ -136,7 +136,7 @@
     <value>Allowed Documents</value>
   </data>
   <data name="AllowedDocsDescription" xml:space="preserve">
-    <value>Allowed Documents separated by commas, e.g. "passport_main,bank_card". More at https://latest.dbrain.io/try#/Documents/recognize_recognize_post</value>
+    <value>Allowed Documents separated by commas, e.g. "passport_main,bank_card". Empty field allows all docs. More at: https://latest.dbrain.io/docs/document-types-and-fields/</value>
   </data>
   <data name="ImageDescription" xml:space="preserve">
     <value>Input image with document for classification &amp; recognition</value>

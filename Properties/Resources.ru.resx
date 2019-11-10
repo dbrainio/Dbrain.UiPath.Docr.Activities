@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AllowedDocsDescription" xml:space="preserve">
-    <value>Allowed Documents separated by commas, e.g. "passport_main,bank_card". More at https://latest.dbrain.io/try#/Documents/recognize_recognize_post</value>
+    <value>Allowed Documents separated by commas, e.g. "passport_main,bank_card". Empty field allows all docs. More at: https://latest.dbrain.io/docs/document-types-and-fields/</value>
   </data>
   <data name="AllowedDocsName" xml:space="preserve">
     <value>Allowed Documents</value>

@@ -79,7 +79,7 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Allowed Documents separated by commas, e.g. &quot;passport_main,bank_card&quot;. More at https://latest.dbrain.io/try#/Documents/recognize_recognize_post.
+        ///   Looks up a localized string similar to Allowed Documents separated by commas, e.g. &quot;passport_main,bank_card&quot;. Empty field allows all docs. More at: https://latest.dbrain.io/docs/document-types-and-fields/.
         /// </summary>
         public static string AllowedDocsDescription {
             get {
