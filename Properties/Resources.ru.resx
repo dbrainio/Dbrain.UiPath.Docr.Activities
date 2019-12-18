@@ -177,4 +177,10 @@
   <data name="ResultName" xml:space="preserve">
     <value>Result</value>
   </data>
+  <data name="WithHitlDescription" xml:space="preserve">
+    <value>Use Dbrain HITL to improve quality. Recognition may require more time.</value>
+  </data>
+  <data name="WithHitlName" xml:space="preserve">
+    <value>Enable Dbrain Human-in-the-loop</value>
+  </data>
 </root>

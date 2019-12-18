@@ -65,6 +65,11 @@ namespace Dbrain.UiPath.Docr.Activities
         [LocalizedDescription(nameof(Resources.AllowedDocsDescription))]
         public InArgument<string> AllowedDocs { get; set; }
 
+        [LocalizedCategory(nameof(Resources.Input))]
+        [LocalizedDisplayName(nameof(Resources.WithHitlName))]
+        [LocalizedDescription(nameof(Resources.WithHitlDescription))]
+        public InArgument<bool> WithHitl { get; set; }
+
         // Outputs
         [LocalizedCategory(nameof(Resources.Output))]
         [LocalizedDisplayName(nameof(Resources.ResultName))]
@@ -97,6 +102,7 @@ namespace Dbrain.UiPath.Docr.Activities
             HttpClient client = new HttpClient();
             client.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json");
             client.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", "Token " + apiToken);
+            client.Timeout = TimeSpan.FromMinutes(60);
             return client;
         }
 
@@ -211,6 +217,7 @@ namespace Dbrain.UiPath.Docr.Activities
             string gateway = ApiGateway.Get(context);
             string apiToken = ApiToken.Get(context);
             string allowedDocs = AllowedDocs.Get(context);
+            bool hitl = WithHitl.Get(context);
             Image image = ImagePayload.Get(context);
 
             if (gateway == null || !gateway.StartsWith("http"))
@@ -239,7 +246,7 @@ namespace Dbrain.UiPath.Docr.Activities
                 if (allowedDocs == null || allowedDocs.Contains(ClassifyResult.DocType))
                 {
                     image = ImageFromBase64(ClassifyResult.Crop);
-                    var RecognizeResult = Recognize(client, gateway, image, ClassifyResult.DocType, false);
+                    var RecognizeResult = Recognize(client, gateway, image, ClassifyResult.DocType, hitl);
                     if (!RecognizeResult.Success)
                     {
                         err = RecognizeResult.Err;

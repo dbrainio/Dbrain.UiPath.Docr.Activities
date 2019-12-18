@@ -266,5 +266,23 @@ namespace Dbrain.UiPath.Docr.Activities.Properties {
                 return ResourceManager.GetString("ResultName", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Use Dbrain HITL to improve quality. Recognition may require more time..
+        /// </summary>
+        public static string WithHitlDescription {
+            get {
+                return ResourceManager.GetString("WithHitlDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enable Dbrain Human-in-the-loop.
+        /// </summary>
+        public static string WithHitlName {
+            get {
+                return ResourceManager.GetString("WithHitlName", resourceCulture);
+            }
+        }
     }
 }
